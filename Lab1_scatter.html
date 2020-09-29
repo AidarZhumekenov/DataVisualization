@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<meta charset="utf-8">
+<script src="https://d3js.org/d3.v4.js"></script>
+<div id="DataVisualization"></div>
+
+<script>
+// set the dimensions and margins of the graph
+var margin = {top: 10, right: 30, bottom: 30, left: 60},
+    width = 460 - margin.left - margin.right,
+    height = 400 - margin.top - margin.bottom;
+
+// append the svg object to the body of the page
+var svg = d3.select("#DataVisualization")
+  .append("svg")
+    .attr("width", width + margin.left + margin.right)
+    .attr("height", height + margin.top + margin.bottom)
+  .append("g")
+    .attr("transform",
+          "translate(" + margin.left + "," + margin.top + ")");
+
+const data = [
+  {X:10,Y:10},
+  {X:22,Y:5},
+  {X:100,Y:20},
+  {X:12,Y:35},
+  {X:10,Y:90},
+  {X:42,Y:35},
+  {X:70,Y:10},
+  {X:98,Y:61},
+  {X:2,Y:50},
+  {X:82,Y:75},
+
+  {X:5,Y:5},
+  {X:12,Y:65},
+  {X:35,Y:35},
+  {X:33,Y:49},
+  {X:48,Y:81},
+  {X:70,Y:20},
+  {X:60,Y:50},
+  {X:8,Y:65},
+  {X:5,Y:51},
+  {X:88,Y:72},
+
+  {X:10,Y:95},
+  {X:20,Y:85},
+  {X:30,Y:70},
+  {X:40,Y:65},
+  {X:50,Y:55},
+  {X:60,Y:45},
+  {X:70,Y:35},
+  {X:80,Y:25},
+  {X:90,Y:15},
+  {X:100,Y:5},
+]
+
+
+  // Add X axis
+  var x = d3.scaleLinear()
+    .domain([0, 100])
+    .range([ 0, width ]);
+  svg.append("g")
+    .attr("transform", "translate(0," + height + ")")
+    .call(d3.axisBottom(x));
+
+  // Add Y axis
+  var y = d3.scaleLinear()
+    .domain([0, 100])
+    .range([ height, 0]);
+  svg.append("g")
+    .call(d3.axisLeft(y));
+
+  // Add dots
+  svg.append('g')
+    .selectAll("dot")
+    .data(data)
+    .enter()
+    .append("circle")
+      .attr("cx", function (d) { return x(d.X); } )
+      .attr("cy", function (d) { return y(d.Y); } )
+      .attr("r", 1.5)
+      .style("fill", "#69b3a2")
+
+</script>
