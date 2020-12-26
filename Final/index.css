@@ -1,0 +1,236 @@
+* {
+    padding: 0;
+    margin: 0;
+  }
+  
+  body {
+    background-color: #EAE9EC;
+    font-family: "Open Sans", sans-serif;
+  }
+  
+  .main {
+    background-color: #fff;
+    padding-bottom: 20px;
+    margin-bottom: 40px;
+  }
+  .main .pagination {
+    display: block;
+    text-align: center;
+    margin: 20px 0;
+  }
+  .main .pagination span {
+    border: 1px solid #2876dd;
+    color: #2876dd;
+    border-radius: 0;
+    padding: 5px 20px;
+    text-align: center;
+  }
+  .main .pagination span:hover {
+    cursor: pointer;
+    border: 1px solid #fff;
+    color: #fff;
+    background-color: #2876dd;
+  }
+  .main .youtube__top {
+    border-bottom: 5px solid #EAE9EC;
+  }
+  .main .youtube__top h1 {
+    color: #666666;
+    font-weight: bold;
+    font-size: 16px;
+    text-align: center;
+    padding: 30px 0;
+  }
+  .main .youtube__charts-category {
+    padding: 15px 10px;
+  }
+  .main .youtube__charts-category span {
+    background-color: #F0F0F0;
+    padding: 3px 20px;
+    border-radius: 20px;
+    font-size: 14px;
+  }
+  .main .youtube__charts-category span.active {
+    font-weight: bold;
+    background-color: #D7D7D7;
+    margin: 0 10px;
+  }
+  .main .youtube__charts-statistic {
+    display: block;
+    padding: 10px 10px;
+  }
+  .main .youtube__charts-statistic .row {
+    margin: 0 !important;
+    width: 100%;
+  }
+  .main .youtube__charts-statistic .row .statistics {
+    /* border: 1px solid #e7e7e7; */
+  }
+  .main .youtube__charts-statistic .row .statistics img {
+    width: 200px !important;
+  }
+  .main .youtube__charts-items {
+    padding: 10px 10px;
+  }
+  .main .youtube__charts-items .row {
+    margin: 0;
+  }
+  .main .youtube__charts-items .row .item-video {
+    position: relative;
+    margin-bottom: 20px;
+    overflow: hidden;
+  }
+
+  .main .youtube__charts-items .row .item-video img{
+    height:180px;
+  }
+
+  .main .youtube__charts-items .row .item-video .layer {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 1000;
+    justify-content: flex-end;
+    background: transparent;
+    transition: background 0.2s ease;
+    text-align: center;
+    /* box-shadow: 0 2px 24px rgba(168,175,196,.5); */
+  }
+  .main .youtube__charts-items .row .item-video .layer span {
+    margin: 0;
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    color: #fff;
+    font-weight: bold;
+    width: auto;
+    padding: 3px 10px;
+    border-radius: 20px;
+    font-size: 36px;
+    display: none;
+  }
+  .main .youtube__charts-items .row .item-video:hover .layer {
+    background-color: rgba(40, 78, 203, 0.8);
+  }
+  .main .youtube__charts-items .row .item-video:hover span {
+    display: block;
+  }
+  .main .youtube__charts-items .row .item-video:hover span:hover {
+    cursor: pointer;
+  }
+  .main .youtube__charts-items .row .item-video:hover .textBox span {
+    transform: translateX(calc(200px - 100%));
+  }
+  .main .youtube__charts-items .row .item-video .textBox {
+    height: 30px;
+    overflow: hidden;
+    line-height: 30px;
+    padding: 5px;
+    position: relative;
+  }
+  .main .youtube__charts-items .row .item-video .textBox span {
+    position: absolute;
+    white-space: nowrap;
+    transform: translateX(0);
+    transition: 1s;
+  }
+  .main .youtube__charts-items .row .item-video .total_info {
+    font-size: 12px;
+    color: #c0c0c0;
+  }
+  .main .youtube__charts-items .row .item-video .total_info span {
+    display: inline;
+    color: #c0c0c0;
+    font-size: 14px;
+  }
+  
+  .modal {
+    background-color: rgba(0, 0, 0, 0.6);
+  }
+  .modal .modal-content {
+    overflow-y: auto;
+    height: 450px;
+    margin-top: 100px;
+    border: 0;
+    border-radius: 0;
+    background-color: #fff;
+  }
+  .modal .modal-body {
+    padding: 10px 20px;
+  }
+  .modal .close {
+    position: absolute;
+    top: -10px;
+    right: 0;
+    font-size: 42px;
+    color: #fff;
+    z-index: 9999;
+  }
+
+
+  #mytooltip {
+    position: relative;
+    display: inline-block;
+    border-bottom: 1px dotted black; /* If you want dots under the hoverable text */
+    background-color: #000;
+    color: #fff;
+    padding: 5px 15px;
+    font-size: 12px;
+}
+
+select.form-control{
+  font-size: 14px;
+  margin-right: 10px;
+}
+
+  /*loading*/
+.loader{
+  background-color: rgba(0, 0, 0, 0.6);
+  position:fixed;
+  height:100%;
+  width:100%;
+  display: block;
+}
+  .lds-facebook {
+    display: inline-block;
+    position: relative;
+    width: 80px;
+    height: 80px;
+    position: absolute;
+    z-index: 15;
+    top: 40%;
+    left: 50%;
+  }
+  .lds-facebook div {
+    display: inline-block;
+    position: absolute;
+    left: 8px;
+    width: 16px;
+    background: #fff;
+    animation: lds-facebook 1.2s cubic-bezier(0, 0.5, 0.5, 1) infinite;
+  }
+  .lds-facebook div:nth-child(1) {
+    left: 8px;
+    animation-delay: -0.24s;
+  }
+  .lds-facebook div:nth-child(2) {
+    left: 32px;
+    animation-delay: -0.12s;
+  }
+  .lds-facebook div:nth-child(3) {
+    left: 56px;
+    animation-delay: 0;
+  }
+  @keyframes lds-facebook {
+    0% {
+      top: 8px;
+      height: 64px;
+    }
+    50%, 100% {
+      top: 24px;
+      height: 32px;
+    }
+  }

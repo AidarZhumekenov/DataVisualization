@@ -1,0 +1,742 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport"
+        content="width=device-width, user-scalable=no, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0">
+  <meta http-equiv="X-UA-Compatible" content="ie=edge">
+   <!-- Bootstrap CSS -->
+  <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" integrity="sha384-JcKb8q3iqJ61gNV9KGb8thSsNjpSL0n8PARn9HuZOnIxN0hoP+VmmDGMN5t9UJ0Z" crossorigin="anonymous">
+  <link href="https://fonts.googleapis.com/css2?family=Open+Sans:ital,wght@0,300;0,400;0,600;0,700;0,800;1,300;1,400;1,600;1,700;1,800&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Material+Icons"
+        rel="stylesheet">
+  <link rel="stylesheet" href="index.css">
+  <title>Youtube statistics</title>
+</head>
+<body>
+<style type="text/css">
+
+.legend {
+        font-size: 14px;
+    }
+    rect {
+        cursor: pointer;
+        stroke-width: 2;
+    }
+    rect.disabled {
+        fill: transparent !important;
+    }
+
+    /* chart */
+    #chart {
+      height: 400px;
+      margin: 50px;
+        position: relative;
+        display: block;
+        width: 1200px;
+    }
+
+    /* tooltip */
+    .tooltip {
+        background: #eee;
+        box-shadow: 0 0 5px #999999;
+        color: #333;
+        display: none;
+        font-size: 18px;
+        left: 130px;
+        padding: 10px;
+        position: absolute;
+        text-align: center;
+        top: 95px;
+        width: 80px;
+        z-index: 10;
+        opacity: 1 !important;
+    }
+
+    .footer {
+        padding-top: 50px;
+        text-align: center;
+        list-style-type: none;
+    }
+</style>
+
+<script src="https://apis.google.com/js/api.js"></script>
+<script>
+window.addEventListener("load", function(){
+
+
+  const categories = {
+          '1':'Film & Animation',
+          '2':'Autos & Vehicles',
+          '10':'Music',
+          '15':'Pets & Animals',
+          '17':'Sports',
+          '18':'Short Movies',
+          '19':'Travel & Events',
+          '20':'Gaming',
+          '21':'Videoblogging',
+          '22':'People & Blogs',
+          '23':'Comedy',
+          '24':'Entertainment',
+          '25':'News & Politics',
+          '26':'Howto & Style',
+          '27':'Education',
+          '28':'Science & Technology',
+          '29':'Nonprofits & Activism',
+          '30':'Movies',
+          '31':'Anime / Animation',
+          '32':'Action / Adventure',
+          '33':'Classics',
+          '34':'Comedy',
+          '35':'Documentary',
+          '36':'Drama',
+          '37':'Family',
+          '38':'Foreign',
+          '39':'Horror',
+          '40':'Sci Fi / Fantasy',
+          '41':'Thriller',
+          '42':'Shorts',
+          '43':'Shows',
+          '44':'Trailers'
+  }
+
+  let byCategory = []
+  let byChannel = []
+
+  async function getTrends(region='KZ'){
+    //const res = await fetch('https://www.googleapis.com/youtube/v3/videos?part=contentDetails&chart=mostPopular&regionCode=KZ&maxResults=24&key=AIzaSyAkg7cQyWWa0k0goRzUJy6hS2-Z3afb_8k')
+    const res = await fetch('https://www.googleapis.com/youtube/v3/videos?part=snippet%2CcontentDetails%2Cstatistics&chart=mostPopular&regionCode='+region+'&maxResults=100&key=AIzaSyAkg7cQyWWa0k0goRzUJy6hS2-Z3afb_8k')
+    const data =  await res.json()
+    let html = ''
+    data.items.map((item) => {
+      html+= `<div class="col-lg-3">
+              <div class="item-video">
+                <img src="`+item.snippet.thumbnails.standard.url+`" alt="`+item.snippet.localized.title+`">
+                <div class="layer">
+                  <span class="material-icons"  data-toggle="modal" data-target="#exampleModal">addchart</span>
+                </div>
+              <div class="textBox"><span>`+item.snippet.title+`</span></div>
+                <div class="total_info">
+                  <span><span class="material-icons">thumb_up</span> `+item.statistics.likeCount+`</span>
+                  <span><span class="material-icons">thumb_down</span> `+item.statistics.dislikeCount+`</span>
+                  <span><span class="material-icons">comment</span> `+item.statistics.commentCount+`</span>
+                  <span><span class="material-icons">visibility</span> `+item.statistics.viewCount+`</span>
+                </div>
+                </div>
+            </div>`; 
+    });
+    document.getElementById("video__list").innerHTML = html
+    return data
+   }
+   
+  
+   
+Promise.all([getTrends()])
+   .then((data) => {
+
+    document.querySelector(".loader").style.display = "none"
+
+     console.log(data)
+
+    var byCategory = []
+    var mydata = data[0].items.map((i) => {byCategory[i.snippet.categoryId] = (byCategory[i.snippet.categoryId])?byCategory[i.snippet.categoryId]+1:1})
+    var datasetWithNull = byCategory.map((val,key,arr)=> { return {label:categories[key], count:val}})
+    var dataset = []
+    datasetWithNull.map((i) => {
+      if(!!i.label){
+        return dataset.push(i);
+      }
+    })
+    var width = 1200;
+    var height = 800;
+
+    // a circle chart needs a radius
+    var radius = Math.min(width, height) / 4;
+
+    // legend dimensions
+    var legendRectSize = 25; // defines the size of the colored squares in legend
+    var legendSpacing = 6; // defines spacing between squares
+
+    // define color scale
+    var color = d3.scaleOrdinal(d3.schemeCategory20c);
+    // more color scales: https://bl.ocks.org/pstuffa/3393ff2711a53975040077b7453781a9
+
+    var svg = d3.select('#chart') // select element in the DOM with id 'chart'
+        .append('svg') // append an svg element to the element we've selected
+        .attr('width', width) // set the width of the svg element we just added
+        .attr('height', height) // set the height of the svg element we just added
+        .append('g') // append 'g' element to the svg element
+        .attr('transform', 'translate(' + (width / 4) + ',' + (height / 4) + ')'); // our reference is now to the 'g' element. centerting the 'g' element to the svg element
+
+    var arc = d3.arc()
+        .innerRadius(0) // none for pie chart
+        .outerRadius(radius); // size of overall chart
+
+    var pie = d3.pie() // start and end angles of the segments
+        .value(function(d) { return d.count; }) // how to extract the numerical data from each entry in our dataset
+        .sort(null); // by default, data sorts in oescending value. this will mess with our animation so we set it to null
+
+    // define tooltip
+    var tooltip = d3.select('#chart') // select element in the DOM with id 'chart'
+        .append('div') // append a div element to the element we've selected
+        .attr('class', 'tooltip'); // add class 'tooltip' on the divs we just selected
+
+    tooltip.append('div') // add divs to the tooltip defined above
+        .attr('class', 'label'); // add class 'label' on the selection
+
+    tooltip.append('div') // add divs to the tooltip defined above
+        .attr('class', 'count'); // add class 'count' on the selection
+
+    tooltip.append('div') // add divs to the tooltip defined above
+        .attr('class', 'percent'); // add class 'percent' on the selection
+
+    // Confused? see below:
+
+    // <div id="chart">
+    //   <div class="tooltip">
+    //     <div class="label">
+    //     </div>
+    //     <div class="count">
+    //     </div>
+    //     <div class="percent">
+    //     </div>
+    //   </div>
+    // </div>
+
+    dataset.forEach(function(d) {
+        d.count = +d.count; // calculate count as we iterate through the data
+        d.enabled = true; // add enabled property to track which entries are checked
+    });
+
+    // creating the chart
+    var path = svg.selectAll('path') // select all path elements inside the svg. specifically the 'g' element. they don't exist yet but they will be created below
+        .data(pie(dataset)) //associate dataset wit he path elements we're about to create. must pass through the pie function. it magically knows how to extract values and bakes it into the pie
+        .enter() //creates placeholder nodes for each of the values
+        .append('path') // replace placeholders with path elements
+        .attr('d', arc) // define d attribute with arc function above
+        .attr('fill', function(d) { return color(d.data.label); }) // use color scale to define fill of each label in dataset
+        .each(function(d) { this._current - d; }); // creates a smooth animation for each track
+
+    // mouse event handlers are attached to path so they need to come after its definition
+    path.on('mouseover', function(d) {  // when mouse enters div
+        var total = d3.sum(dataset.map(function(d) { // calculate the total number of tickets in the dataset
+            return (d.enabled) ? d.count : 0; // checking to see if the entry is enabled. if it isn't, we return 0 and cause other percentages to increase
+        }));
+        var percent = Math.round(1000 * d.data.count / total) / 10; // calculate percent
+        tooltip.select('.label').html(d.data.label); // set current label
+        tooltip.select('.count').html(d.data.count); // set current count
+        tooltip.select('.percent').html(percent + '%'); // set percent calculated above
+        tooltip.style('display', 'block'); // set display
+    });
+
+    path.on('mouseout', function() { // when mouse leaves div
+        tooltip.style('display', 'none'); // hide tooltip for that element
+    });
+
+    path.on('mousemove', function(d) { // when mouse moves
+        tooltip.style('top', (d3.event.layerY + 10) + 'px') // always 10px below the cursor
+            .style('left', (d3.event.layerX + 10) + 'px'); // always 10px to the right of the mouse
+    });
+
+    // define legend
+    var legend = svg.selectAll('.legend') // selecting elements with class 'legend'
+        .data(color.domain()) // refers to an array of labels from our dataset
+        .enter() // creates placeholder
+        .append('g') // replace placeholders with g elements
+        .attr('class', 'legend') // each g is given a legend class
+        .attr('transform', function(d, i) {
+            var height = legendRectSize + legendSpacing; // height of element is the height of the colored square plus the spacing
+            var offset =  height * color.domain().length / 2; // vertical offset of the entire legend = height of a single element & half the total number of elements
+            var horz = 9 * legendRectSize; // the legend is shifted to the left to make room for the text
+            var vert = i * height - offset; // the top of the element is hifted up or down from the center using the offset defiend earlier and the index of the current element 'i'
+            return 'translate(' + horz + ',' + vert + ')'; //return translation
+        });
+
+    // adding colored squares to legend
+    legend.append('rect') // append rectangle squares to legend
+        .attr('width', legendRectSize) // width of rect size is defined above
+        .attr('height', legendRectSize) // height of rect size is defined above
+        .style('fill', color) // each fill is passed a color
+        .style('stroke', color) // each stroke is passed a color
+        .on('click', function(label) {
+            var rect = d3.select(this); // this refers to the colored squared just clicked
+            var enabled = true; // set enabled true to default
+            var totalEnabled = d3.sum(dataset.map(function(d) { // can't disable all options
+                return (d.enabled) ? 1 : 0; // return 1 for each enabled entry. and summing it up
+            }));
+
+            if (rect.attr('class') === 'disabled') { // if class is disabled
+                rect.attr('class', ''); // remove class disabled
+            } else { // else
+                if (totalEnabled < 2) return; // if less than two labels are flagged, exit
+                rect.attr('class', 'disabled'); // otherwise flag the square disabled
+                enabled = false; // set enabled to false
+            }
+
+            pie.value(function(d) {
+                if (d.label === label) d.enabled = enabled; // if entry label matches legend label
+                return (d.enabled) ? d.count : 0; // update enabled property and return count or 0 based on the entry's status
+            });
+
+            path = path.data(pie(dataset)); // update pie with new data
+
+            path.transition() // transition of redrawn pie
+                .duration(750) //
+                .attrTween('d', function(d) { // 'd' specifies the d attribute that we'll be animating
+                    var interpolate = d3.interpolate(this._current, d); // this = current path element
+                    this._current = interpolate(0); // interpolate between current value and the new value of 'd'
+                    return function(t) {
+                        return arc(interpolate(t));
+                    };
+                });
+        });
+
+    // adding text to legend
+    legend.append('text')
+        .attr('x', legendRectSize + legendSpacing)
+        .attr('y', legendRectSize - legendSpacing)
+        .text(function(d) { return d; });
+
+
+const bubbleDatasetChild = data[0].items.map((i, index) => {
+  return {
+    Id:index+1,
+    Name:i.snippet.localized.title, 
+    Count: 50-(index+1),
+    Info:'Views:'+i.statistics.viewCount+' | Likes: ' + i.statistics.likeCount + ' | ' + ' Comments:' + i.statistics.commentCount + ' | Title: ' + i.snippet.localized.title
+  }
+})
+//const bubbleDatasetChild2 = data[0].items.map((i) => {return {Name:i.snippet.localized.title, Count:i.statistics.likeCount}})
+//const bubbleDatasetChild3 = data[0].items.map((i) => {return {Name:i.snippet.localized.title, Count:i.statistics.commentCount}})
+
+console.log('b',bubbleDatasetChild)
+
+
+       function bubbleChartF(bubbleDataset, idName){
+        var diameter = 600;
+         color = d3.scaleOrdinal(d3.schemeCategory20);
+
+        var bubble = d3.pack(bubbleDataset)
+            .size([diameter, diameter])
+            .padding(1.5);
+
+        var svg3 = d3.select(idName)
+            .append("svg")
+            .attr("width", diameter)
+            .attr("height", diameter)
+            .attr("class", "bubble");
+
+        var nodes = d3.hierarchy(bubbleDataset)
+            .sum(function(d) { return d.Count; });
+
+        var node = svg3.selectAll(".node")
+            .data(bubble(nodes).descendants())
+            .enter()
+            .filter(function(d){
+                return  !d.children
+            })
+            .append("g")
+            .attr("class", "node")
+            .attr("transform", function(d) {
+                return "translate(" + d.x + "," + d.y + ")";
+            });
+
+        node.append("title")
+            .text(function(d) {
+                return d.data.Info;
+            });
+
+        node.append("circle")
+            .attr("r", function(d) {
+              console.log('radius',d)
+                return d.r;
+            })
+            .style("fill", function(d,i) {
+                return color(i);
+            });
+
+        /* node.append("text")
+            .attr("dy", ".2em")
+            .style("text-anchor", "middle")
+            .text(function(d) {
+                return d.data.Name.substring(0, d.r / 3);
+            })
+            .attr("font-family", "sans-serif")
+            .attr("font-size", function(d){
+                return d.r/5;
+            })
+            .attr("fill", "white"); */
+
+        node.append("text")
+            .attr("dy", "0.4em")
+            .style("text-anchor", "middle")
+            .text(function(d) {
+                return d.data.Id;
+            })
+            .attr("font-family",  "Gill Sans", "Gill Sans MT")
+            .attr("font-size", function(d){
+                return d.r;
+            })
+            .attr("fill", "white");
+
+        d3.select(self.frameElement)
+            .style("height", diameter + "px");
+       }
+
+
+       bubbleChartF({
+            "children": bubbleDatasetChild
+        }, '#bubble')
+/* 
+        bubbleChartF({
+            "children": bubbleDatasetChild2
+        }, '#bubble2')
+        bubbleChartF({
+            "children": bubbleDatasetChild3
+        }, '#bubble3')
+ */
+/* 
+var margin = {top: 20, right: 30, bottom: 40, left: 50},
+    width = 460 - margin.left - margin.right,
+    height = 400 - margin.top - margin.bottom;
+//by view
+// append the svg object to the body of the page
+var svg = d3.select("#statisticsByView")
+  .append("svg")
+    .attr("width", width + margin.left + margin.right)
+    .attr("height", height + margin.top + margin.bottom)
+  .append("g")
+    .attr("transform",
+          "translate(" + margin.left + "," + margin.top + ")");
+// Add X axis
+var x = d3.scaleLinear()
+    .domain([0, 10000000])
+    .range([ 0, width]);
+  svg.append("g")
+    .attr("transform", "translate(0," + height + ")")
+    .call(d3.axisBottom(x))
+    .selectAll("text")
+      .attr("transform", "translate(-10,0)rotate(-45)")
+      .style("text-anchor", "end");
+  // Y axis
+  var y = d3.scaleBand()
+    .range([ 0, height ])
+    .domain(data[0].items.map(function(d) { return d.snippet.title; }))
+    .padding(.1);
+  svg.append("g")
+    .call(d3.axisLeft(y))
+    var tooltip = d3.select("body")
+    .append("div")
+    .attr("id", "mytooltip")
+    .style("position", "absolute")
+    .style("z-index", "10")
+    .style("display", "none")
+    function onMouseOver(d,i) {
+        d3.select(this)
+            .style("cursor", "pointer")
+            .attr('class','highlight');
+        d3.select("#mytooltip")
+            .style("top", (d3.event.pageY-10)+"px")
+            .style("left", (d3.event.pageX+20)+"px")
+            .style("display", "block")//set style to it
+            .html(d3.select(this).attr('data-title')+"<br>"+"viewCount: "+d3.select(this).attr('data-viewCount'))
+      }
+    function onMouseOut(d,i) {
+        d3.select(this)
+            .attr('class','bar');
+        d3.select("#mytooltip")
+            .style("display", "none")
+      }
+  //Bars
+  svg.selectAll("myRect")
+    .data(data[0].items)
+    .enter()
+    .append("rect")
+    .attr("x", x(0) )
+    .attr("y", function(d) { return y(d.snippet.title); })
+    .attr("width", function(d) { return x(d.statistics.viewCount); })
+    .attr("data-title", function(d){return d.snippet.title})
+    .attr("data-publishedAt", function(d){return d.snippet.publishedAt;})
+    .attr("data-viewCount", function(d){return d.statistics.viewCount;})
+    .attr("height", y.bandwidth() )
+    .attr("fill", "#2876DD")
+    .on("mouseover", onMouseOver)
+    .on("mouseout", onMouseOut)
+//by like
+// append the svg object to the body of the page
+var svg2 = d3.select("#statisticsByLike")
+  .append("svg")
+    .attr("width", width + margin.left + margin.right)
+    .attr("height", height + margin.top + margin.bottom)
+  .append("g")
+    .attr("transform",
+          "translate(" + margin.left + "," + margin.top + ")");
+// Add X axis
+var x2 = d3.scaleLinear()
+    .domain([0, 500000])
+    .range([ 0, width]);
+  svg2.append("g")
+    .attr("transform", "translate(0," + height + ")")
+    .call(d3.axisBottom(x2))
+    .selectAll("text")
+      .attr("transform", "translate(-10,0)rotate(-45)")
+      .style("text-anchor", "end");
+  // Y axis
+  var y2 = d3.scaleBand()
+    .range([ 0, height ])
+    .domain(data[0].items.map(function(d) { return d.snippet.title; }))
+    .padding(.1);
+  svg2.append("g")
+    .call(d3.axisLeft(y2))
+  //Bars
+  svg2.selectAll("myRect")
+    .data(data[0].items)
+    .enter()
+    .append("rect")
+    .attr("x", x2(0) )
+    .attr("y", function(d) { return y2(d.snippet.title); })
+    .attr("width", function(d) { return x2(d.statistics.likeCount); })
+    .attr("data-title", function(d){return d.snippet.title})
+    .attr("data-publishedAt", function(d){return d.snippet.publishedAt;})
+    .attr("data-likeCount", function(d){return d.statistics.likeCount;})
+    .attr("height", y2.bandwidth() )
+    .attr("fill", "#2876DD")
+//by dislikeCount
+// append the svg object to the body of the page
+var svg3 = d3.select("#statisticsByDislike")
+  .append("svg")
+    .attr("width", width + margin.left + margin.right)
+    .attr("height", height + margin.top + margin.bottom)
+  .append("g")
+    .attr("transform",
+          "translate(" + margin.left + "," + margin.top + ")");
+// Add X axis
+var x3 = d3.scaleLinear()
+    .domain([0, 10000])
+    .range([ 0, width]);
+  svg3.append("g")
+    .attr("transform", "translate(0," + height + ")")
+    .call(d3.axisBottom(x3))
+    .selectAll("text")
+      .attr("transform", "translate(-10,0)rotate(-45)")
+      .style("text-anchor", "end");
+  // Y axis
+  var y3 = d3.scaleBand()
+    .range([ 0, height ])
+    .domain(data[0].items.map(function(d) { return d.snippet.title; }))
+    .padding(.1);
+  svg3.append("g")
+    .call(d3.axisLeft(y3))
+  //Bars
+  svg3.selectAll("myRect")
+    .data(data[0].items)
+    .enter()
+    .append("rect")
+    .attr("x", x3(0) )
+    .attr("y", function(d) { return y3(d.snippet.title); })
+    .attr("width", function(d) { return x3(d.statistics.dislikeCount); })
+    .attr("data-title", function(d){return d.snippet.title})
+    .attr("data-publishedAt", function(d){return d.snippet.publishedAt;})
+    .attr("data-dislikeCount", function(d){return d.statistics.dislikeCount;})
+    .attr("height", y3.bandwidth() )
+    .attr("fill", "#2876DD")
+//by comment
+// append the svg object to the body of the page
+var svg4 = d3.select("#statisticsByComment")
+  .append("svg")
+    .attr("width", width + margin.left + margin.right)
+    .attr("height", height + margin.top + margin.bottom)
+  .append("g")
+    .attr("transform",
+          "translate(" + margin.left + "," + margin.top + ")");
+// Add X axis
+var x4 = d3.scaleLinear()
+    .domain([0, 10000])
+    .range([ 0, width]);
+  svg4.append("g")
+    .attr("transform", "translate(0," + height + ")")
+    .call(d3.axisBottom(x3))
+    .selectAll("text")
+      .attr("transform", "translate(-10,0)rotate(-45)")
+      .style("text-anchor", "end");
+  // Y axis
+  var y4 = d3.scaleBand()
+    .range([ 0, height ])
+    .domain(data[0].items.map(function(d) { return d.snippet.title; }))
+    .padding(.1);
+  svg4.append("g")
+    .call(d3.axisLeft(y4))
+  //Bars
+  svg4.selectAll("myRect")
+    .data(data[0].items)
+    .enter()
+    .append("rect")
+    .attr("x", x4(0) )
+    .attr("y", function(d) { return y4(d.snippet.title); })
+    .attr("width", function(d) { return x4(d.statistics.commentCount); })
+    .attr("data-title", function(d){return d.snippet.title})
+    .attr("data-publishedAt", function(d){return d.snippet.publishedAt;})
+    .attr("data-commentCount", function(d){return d.statistics.commentCount;})
+    .attr("height", y4.bandwidth() )
+    .attr("fill", "#2876DD")*/
+
+
+
+
+  }) 
+})
+
+  
+</script>
+
+    <div class="loader">
+      <div class="lds-facebook"><div></div><div></div><div></div></div>
+    </div>
+
+  <div class="container">
+    <div class="main">
+      <div class="youtube__top">
+        <h1>Data Visualization: Youtube statistics in KZ</h1>
+      </div>
+
+      <div class="youtube__charts">
+        
+
+        <div class="youtube__charts-statistic">
+          <div class="row">
+            <div class="statistics col-lg-12">
+              <h5 style="text-align: center;">Most popular video by Ranking</h5>
+              <div id="bubble"></div>
+            </div>
+           
+            <div class="statistics col-lg-12">
+              <h5 style="text-align: center;">Distribution By categories</h5>
+              <div id="chart"></div>
+            </div>
+            <div class="statistics col-lg-12">
+              <h5 style="text-align: center;">Weekly stats by channel Navalny</h5>
+              <button onclick="update('var1')" class="btn btn-primary">Subscribers</button>
+              <button onclick="update('var2')" class="btn btn-primary">Views</button>
+              <a href="https://www.youtube.com/c/%D0%90%D0%BB%D0%B5%D0%BA%D1%81%D0%B5%D0%B9%D0%9D%D0%B0%D0%B2%D0%B0%D0%BB%D1%8C%D0%BD%D1%8B%D0%B9" target="_blank">Channel link</a>
+              <div id="my_dataviz_2"></div>
+            </div>
+            <div class="statistics col-lg-6" id="statisticsByView"></div>
+            <div class="statistics col-lg-6" id="statisticsByLike"></div>
+            <div class="statistics col-lg-6" id="statisticsByDislike"></div>
+            <div class="statistics col-lg-6" id="statisticsByComment"></div>
+          </div>
+        </div>
+
+
+        <div class="youtube__charts-items">
+            <div class="row" id="video__list">
+              ...loading
+              
+              <div class="svgContainer"></div>
+
+
+            </div>
+          </div>
+
+
+      </div>
+
+      <div class="pagination">
+        <!-- <span onClick="getNextPage()">Загрузить еще</span> -->
+      </div>
+    </div>
+
+  </div>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/underscore.js/1.9.1/underscore-min.js"></script>
+  <script src="https://d3js.org/d3.v4.min.js"></script>
+  <!-- <script src="//d3js.org/d3.v3.min.js"></script> -->
+<!--   <script src="http://d3js.org/d3.v3.min.js"></script>
+ -->
+  <script>
+/* let myPromise = new Promise((resolve,reject) => {
+  var xobj = new XMLHttpRequest();
+  xobj.overrideMimeType("application/json");
+  xobj.open('GET', window.location.origin + "/data.json", true);
+  xobj.onreadystatechange = function () {
+    if (xobj.readyState == 4 && xobj.status == "200") {
+      //myJsonData = JSON.parse(xobj.responseText)
+      resolve(JSON.parse(xobj.responseText))
+    }
+  };
+  xobj.send(null);
+}) */
+
+/* myPromise.then((data) => {
+}) */
+//2nd chart
+var margin = {top: 30, right: 30, bottom: 70, left: 60},
+    width = 1000 - margin.left - margin.right,
+    height = 600 - margin.top - margin.bottom;
+var svg2 = d3.select("#my_dataviz_2")
+  .append("svg")
+    .attr("width", width + margin.left + margin.right)
+    .attr("height", height + margin.top + margin.bottom)	
+  .append("g")
+    .attr("transform",
+          "translate(" + margin.left + "," + margin.top + ")");
+
+
+// Initialize the X axis
+var x = d3.scaleBand()
+  .range([ 0, width ])
+  .padding(0.2);
+var xAxis = svg2.append("g")
+  .attr("transform", "translate(0," + height + ")")
+
+// Initialize the Y axis
+var y = d3.scaleLinear()
+  .range([ height, 0]);
+var yAxis = svg2.append("g")
+  .attr("class", "myYaxis")
+
+
+// A function that create / update the plot for a given variable:
+function update(selectedVar) {
+
+  // Parse the Data
+  d3.csv("data.csv", function(data) {
+
+    // X axis
+    x.domain(data.map(function(d) { return d.group; }))
+    xAxis.transition().duration(1000).call(d3.axisBottom(x))
+
+    // Add Y axis
+    y.domain([0, d3.max(data, function(d) { return +d[selectedVar] }) ]);
+    yAxis.transition().duration(1000).call(d3.axisLeft(y));
+
+    // variable u: map data to existing bars
+    var u = svg2.selectAll("rect")
+      .data(data)
+
+    // update bars
+    u
+      .enter()
+      .append("rect")
+      .merge(u)
+      .transition()
+      .duration(1000)
+        .attr("x", function(d) { return x(d.group); })
+        .attr("y", function(d) { return y(d[selectedVar]); })
+        .attr("width", x.bandwidth())
+        .attr("height", function(d) { return height - y(d[selectedVar]); })
+        .attr("fill", "#69b3a2")
+  })
+
+}
+
+// Initialize plot
+update('var1')
+
+    </script>
+    <!-- jQuery first, then Popper.js, then Bootstrap JS -->
+    <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js" integrity="sha384-DfXdz2htPH0lsSSs5nCTpuj/zy4C+OGpamoFVy38MVBnE+IbbVYUew+OrCXaRkfj" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/popper.js@1.16.1/dist/umd/popper.min.js" integrity="sha384-9/reFTGAW83EW2RDu2S0VKaIzap3H66lZH81PoYlFhbGU+6BZp6G7niu735Sk7lN" crossorigin="anonymous"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js" integrity="sha384-B4gt1jrGC7Jh4AgTPSdUtOBvfO8shuf57BaghqFfPlYxofvL8/KUEfYiJOMMV+rV" crossorigin="anonymous"></script>
+</body>
+</html>
